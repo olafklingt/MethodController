@@ -1,0 +1,16 @@
+TITLE:: SuperClassOfObjectAndMethodController
+summary:: Superclass of MethodController and ObjectController
+categories:: MethodControllerQuark
+
+
+DESCRIPTION::
+This Class is the Superclass of link::Classes/MethodController:: and link::Classes/ObjectController::. It should not be used itself.
+
+
+INSTANCEMETHODS::
+
+EXAMPLES::
+
+code::
+(some example code)
+::

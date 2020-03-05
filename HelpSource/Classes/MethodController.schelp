@@ -1,0 +1,1055 @@
+TITLE:: MethodController
+summary:: A Controller that links a method ( usually a getter or a setter) to another Object like a View or Synth
+categories:: MethodControllerQuark
+related:: Classes/ObjectController, Classes/NonSpec, Classes/FuncSpec
+
+DESCRIPTION::
+
+A MethodController is a Controller Class that links a Model to multiple Views.
+
+The class is a generalization of the CV class from the Conductor Quark.
+
+The data stored in the Model is accessed by getter and setter methods chosen when the MethodController is created.
+
+MethodController:value gets the Models data.
+
+code::
+(
+m = Ref( 500);
+c = MethodController( m, \value, \value_);
+c.value;
+)
+::
+
+The View is accessed by getter and setter methods chosen when the View is linked to the controller.
+
+code::
+(
+m = Ref( 500);
+c = MethodController( m, \value, \value_);
+c.value;
+v = NumberBox().front;
+c.linkValue( v, \value, \value_);
+)
+::
+
+Often the data in a Model is of a specific type and has a specific range because of that it makes sense to associate it with a ControlSpec.
+
+The unmaped value of the models data ( in the range 0 to 1) can be accessed by the MethodController:input.
+
+This allows us to map the data to the 0 to 1 range often used in Views.
+
+code::
+(
+m = Ref( 500);
+c = MethodController( m, \value, \value_, spec:\freq.asSpec);
+c.value;//500
+c.input;//0.46...
+v = NumberBox().front;
+c.linkValue( v, \value, \value_);
+w = Slider().front;
+c.linkInput( w, \value, \value_);
+)
+::
+
+If the data in the Model can not be easily specified but the views should make use of of their own interpretation of the data a spec can be provided to the link method.
+
+code::
+(
+m = Ref( 0.5);
+c = MethodController( m, \value, \value_);
+c.value;//0.5
+c.input;//0.5 ... same as value
+v = NumberBox().front;
+c.linkValue( v, \value, \value_, spec:\freq.asSpec);
+w = Slider().front;
+c.linkInput( w, \value, \value_);//assumes that the data is in the range 0 to 1 in linear distribution.
+)
+::
+
+The setter methods can be derived from the getter methods.
+
+code::
+(
+m = Ref( 500);
+c = MethodController( m, \value, spec:\freq.asSpec);
+c.value;//500
+c.input;//0.46...
+v = NumberBox().front;
+c.linkValue( v, \value);
+w = Slider().front;
+c.linkInput( w, \value);
+)
+::
+
+The default getter method is value.
+
+code::
+(
+m = Ref( 500);
+c = MethodController( m, spec:\freq.asSpec);
+c.value;//500
+c.input;//0.46...
+v = NumberBox().front;
+c.linkValue( v);
+w = Slider().front;
+c.linkInput( w);
+)
+::
+
+To be able to access elements of an Array it is possible to define a getter or setter with initial arguments.
+
+code::
+(
+m = [500];
+c = MethodController( m, [\at, 0], [\put, 0], spec:\freq.asSpec);
+c.value;//500
+c.input;//0.46...
+v = NumberBox().front;
+c.linkValue( v);
+w = Slider().front;
+c.linkInput( w);
+)
+::
+
+A shortcut for this is provided by the forArray classmethod.
+
+code::
+(
+m = [500];
+c = MethodController.forArray( m, 0, spec:\freq.asSpec);
+c.value;//500
+c.input;//0.46...
+v = NumberBox().front;
+c.linkValue( v);
+w = Slider().front;
+c.linkInput( w);
+)
+::
+
+The MethodController is adding itself as a dependant of the Model only if it is linked to other Objects.
+
+TODO THIS IS NOT UPTODATE!
+The Views are added to a Dictionary in the Controller in the variable links.
+
+To avoid memory leaks it has to remove itself or be released.
+
+Views usually remove themselves from the Dictionary onClose. ( This behaviour would break if someone make use of the onClose variable and overwrites the function that got put there)
+
+code::
+(
+m = [500];
+c = MethodController.forArray( m, 0, spec:\freq.asSpec);
+c.value;//500
+c.input;//0.46...
+v = NumberBox().front;
+c.linkValue( v);
+w = Slider().front;
+c.linkInput( w);
+)
+m.release // the model releases its dependants
+c.remove // or the controller removes itself from its model
+c.links // Dictionary that holds the links to the view
+c.unlink( v) // this only needs to be called if the onClose hook can not be used, or the linked object doesn't have a onClose hook.
+::
+
+CLASSMETHODS::
+
+METHOD:: new
+
+Create a MethodController
+
+ARGUMENT:: model
+
+The Object that holds the data
+
+ARGUMENT:: modelget
+
+Symbol, Array or Function that is used to get the data from the model.
+
+A link::Classes/Symbol:: of the name of the method that gets the data. default is \value.
+
+a link::Classes/Array:: of the form [a Symbol, ... args] to be able to get data from the Model with methods with multiple arguments like [\at, 0].
+
+or
+
+a link::Classes/Function:: a function that gets as first argument the model for Example { |m|m.value*2 }.
+
+ARGUMENT:: modelset
+
+Nil, Symbol, Array or Function that is used to get the data from the model.
+
+If no modelset is specified modelget.asSetter is called. This works well with symbols.
+
+a link::Classes/Symbol:: of the name of the method that sets the data. default is modelset.asSetter i.e. \value_ .
+
+a link::Classes/Array:: of the form [a Symbol, ... args] to be able to set data in the Model with methods with multiple arguments like [\at, 0].
+
+or
+
+a link::Classes/Function:: a function that gets as first argument the Model and as a second argument the value for example { |m, v|m.value = v/2 }.
+
+ARGUMENT:: spec
+
+A link::Classes/ControlSpec:: that specifies the data of the Model. The spec is used to unmap the data to the 0 to 1 range used by many Views. The default value is a link::Classes/NonSpec:: a spec that does not specify anything.
+
+ARGUMENT:: updateObjectOnChange
+
+This argument is true or false. default value is true. If the Model has a ObjectController as a dependant it might be reasonable to assume that the controller needs update after data in the model changed therefore the ObjectController is called. If this behavious is not undesirable the variable can be set to false.
+
+ARGUMENT:: msg
+
+msg is the msg used to identify the specific parameter that is updated in the Model.
+
+if model.changed( msg) is called the MethodController is updated.
+
+usually msg is derived from the modelget variable.
+
+if modelget is a symbol msg is that Symbol.
+
+if modelget is a array a msg is derived from that Array [\at, 0] becomes \at_0_ .
+
+if modelget is a function the msg is the symbol \methodControllerSync .
+
+returns:: a MethodController
+
+METHOD:: forArray
+
+If the Model is an Array or similar ArrayedCollection that where data is accessed through \at and \put this method simplifies the specification of getter and setter.
+
+ARGUMENT:: model
+
+the model
+
+ARGUMENT:: pos
+
+The position of the data in the model that is accessed. resulting in a getter array of the form [\at, pos] and a setter array of the form [\put, pos]
+
+ARGUMENT:: spec
+
+a ControlSpec
+
+ARGUMENT:: updateObjectOnChange
+
+default is true
+
+ARGUMENT:: msg
+
+default is derived from the getter method \at_pos_
+
+returns:: a MethodController
+
+INSTANCEMETHODS::
+
+METHOD:: input
+
+getter gets the unmaped data from the model ( making use of the spec of the MethodController)
+
+setter maps and sets the data in the model ( making use of the spec of the MethodController)
+
+ARGUMENT:: val
+
+Usually a number in the range 0 to 1
+
+returns:: if a ControlSpec is specified the getter usually returns a number in the range 0 to 1
+
+METHOD:: value
+
+getter gets the data from the model.
+
+setter sets the data in the model.
+
+ARGUMENT:: val
+
+returns:: the data from the model.
+
+METHOD:: next
+
+calls link::Classes/MethodController#-value:: for compatibility with Streams
+
+METHOD:: link
+
+shortcut for linkInput
+
+METHOD:: linkInput
+
+Links to a object ( often a View ) so that the object is updated on a models change.
+
+Linking means here a bidirectional connection.
+
+The object/view gets the model as unmaped by the provided spec.
+
+Model gets the object/views state as mapped by the provided spec.
+
+This link makes use of the link::Classes/MethodController#-input:: method.
+
+ARGUMENT:: obj
+
+Object to be linked often a View.
+
+ARGUMENT:: objget
+
+Method used to get data from the View.
+
+Default is \value.
+
+Either Symbol, Array, or Function ( see link::Classes/MethodController#*new:: modelget)
+
+ARGUMENT:: objset
+
+Method used to set data in the View.
+
+Default is \value_.
+
+Either Symbol, Array, or Function ( see link::Classes/MethodController#*new:: modelget)
+
+ARGUMENT:: spec
+
+A ControlSpec that can be used to map the values returned by link::Classes/MethodController#-input:: to the range of the View()
+
+METHOD:: linkValue
+
+links a object ( often a View) to the Model via the value methods of the controller.
+
+ARGUMENT:: obj
+
+Object to be linked often a View.
+
+ARGUMENT:: objget
+
+Method used to get data from the View.
+
+Default is \value.
+
+Either Symbol, Array, or Function ( see link::Classes/MethodController#*new:: modelget)
+
+ARGUMENT:: objset
+
+Method used to set data in the View.
+
+Default is \value_.
+
+Either Symbol, Array, or Function ( see link::Classes/MethodController#*new:: modelget)
+
+ARGUMENT:: spec
+
+A ControlSpec that can be used to map the values returned by link::Classes/MethodController#-value:: to the range of the View()
+
+METHOD:: linkInputFrom
+
+In some cases only a onedirectional connection is needed.
+
+linkInputFrom updates the model from the linked View.
+
+For details on the arguments look at link::Classes/MethodController#-linkInput::.
+
+METHOD:: linkValueFrom
+
+In some cases only a onedirectional connection is needed.
+
+linkInputFrom updates the model from the linked View.
+
+For details on the arguments look at link::Classes/MethodController#-linkValue::.
+
+METHOD:: linkInputTo
+
+In some cases only a onedirectional connection is needed.
+
+linkInputTo updates the linked View from the model.
+
+For details on the arguments look at link::Classes/MethodController#-linkInput::.
+
+METHOD:: linkValueTo
+
+In some cases only a onedirectional connection is needed.
+
+linkValueTo updates the linked View from the model.
+
+For details on the arguments look at link::Classes/MethodController#-linkValue::.
+
+METHOD:: update
+
+update is called by model.changed( msg).
+
+METHOD:: updateLinks
+
+if the model might have changed but one is not sure one can use this method to update the linked Views.
+
+METHOD:: unlink
+
+releases or unlinks the obj.
+
+unlink is assiged to be called by View:onClose automatically if View:onClose is not overwritten by another function. If the Object is not a View it has to be called explicitly to avoid memory leaks.
+
+ARGUMENT:: obj
+
+object to be released
+
+METHOD:: remove
+
+Remove this MethodController from its models dependancy. If all links are released it is called. Because calling MethodController:update would be of no use.
+
+METHOD:: replaceModel
+
+replaces the model
+
+ARGUMENT:: newModel
+
+Model to replace the old model.
+
+EXAMPLES::
+
+subsection:: A color chooser.
+
+to make clear the value of this class I create three windows that are updated seamlessly.
+
+It makes use of the link::Classes/ObjectController:: class.
+
+code::
+(
+// Model
+m = Color( *{ 1.0.rand }!3);
+~makeColorView = {
+	var r = Slider();
+	var g = Slider();
+	var b = Slider();
+	var a = View().minSize_( 40@40);// An area to show the color
+	var v = View().layout_( l = HLayout( r, g, b, a));
+	v.front;
+	(
+		red: r,
+		green: g,
+		blue: b,
+		area: a,
+		v: v
+	)
+ };
+
+~makeAlternativeView = {
+	var r = NumberBox();
+	var g = NumberBox();
+	var b = NumberBox();
+	var a = View().minSize_( 40@40);// An area to show the color
+	var v = View().layout_( l = HLayout( r, g, b, a));
+	v.front;
+	(
+		red: r,
+		green: g,
+		blue: b,
+		area: a,
+		v: v
+	)
+ };
+
+~makeColorController = { |model|
+	var rc = MethodController( model, \red, \red_);
+	var gc = MethodController( model, \green);
+	var bc = MethodController( model, \blue);
+	var ac = ObjectController( model);
+	(
+		red: rc,
+		green: gc,
+		blue: bc,
+		area: ac
+	);
+ };
+
+~linkColorModelAndView = { |control, view|
+	control.red.link( view.red, \value, \value_);
+	control.green.link( view.green, \value);// setter is derived from getter \value_
+	control.blue.link( view.blue);// getter is default to \value
+	control.area.link( view.area, \background_);// ObjectController only gets a setter
+ };
+
+~linkColorModelAndViewAlternative = { |control, view|
+	control.red.link( view.red, \value, \value_, \freq.asSpec); // represent the RGB values in the range of frequencies
+	control.green.link( view.green, spec: \freq); // asSpec is called converting a Symbol automatically to a ControlSpec
+	control.blue.link( view.blue, spec: \freq);
+	control.area.link( view.area, \background_);
+ };
+
+c = ~makeColorController.value( m);
+v = ~makeColorView.value( m);
+~linkColorModelAndView.value( c, v);
+w = ~makeColorView.value( m);
+~linkColorModelAndView.value( c, w);
+z = ~makeAlternativeView.value( m);
+~linkColorModelAndViewAlternative.value( c, z);
+)
+::
+
+subsection:: An Array of frequencies
+
+This example is like the previous a color chooser. But in this case the model is not a color itself but rather an array of 3 frequencies. This example aims to make clear why I implemented MethodController and its link functions with two specs.
+
+code::
+(
+m = [440, 880, 765];
+~makeColorView = {
+	var r = Slider();
+	var g = Slider();
+	var b = Slider();
+	var a = View().minSize_( 40@40);// An area to show the color
+	var v = View().layout_( l = HLayout( r, g, b, a));
+	v.front;
+	(
+		red: r,
+		green: g,
+		blue: b,
+		area: a,
+		v: v
+	);
+ };
+
+~makeAlternativeView = {
+	var r = NumberBox();
+	var g = NumberBox();
+	var b = NumberBox();
+	var a = View().minSize_( 40@40);// An area to show the color
+	var v = View().layout_( l = HLayout( r, g, b, a));
+	v.front;
+	(
+		red: r,
+		green: g,
+		blue: b,
+		area: a,
+		v: v
+	);
+ };
+
+~makeColorModel = { |model|
+	var rc = MethodController( model, [\at, 0], [\put, 0], \freq);// the data in the array are frequencies
+	var gc = MethodController.forArray( model, 1, \freq);// forArray can be used in this case
+	var bc = MethodController.forArray( model, 2, \freq);
+	var ac = ObjectController( model, \freq);
+	(
+		red: rc,
+		green: gc,
+		blue: bc,
+		area: ac
+	);
+ };
+
+~linkColorModelAndView = { |control, view|
+	var rc = control.red.link( view.red);
+	var gc = control.green.link( view.green);
+	var bc = control.blue.link( view.blue);
+	var ac = control.area.link( view.area,
+		, { |view, value|
+			view.background = Color( *value)
+		 }
+	);
+ };
+
+~linkColorModelAndViewAlternative = { |control, view|
+	var rc = control.red.linkValue( view.red); // let the NumberBox represent the original Value
+	var gc = control.green.link( view.green); // link is a shortcut for linkInput. linked using controller.input as such the value is in the range 0 to 1 if a ControlSpec is used
+	var bc = control.blue.link( view.blue, spec: \bipolar); // sets the unmaped value from the model and map it on the view with another spec
+
+	var ac = control.area.link( view.area,
+		{ |view, value|
+			view.background = Color( *value)
+		 }
+	);
+ };
+
+c = ~makeColorModel.value( m);
+v = ~makeColorView.value( m);
+~linkColorModelAndView.value( c, v);
+w = ~makeColorView.value( m);
+~linkColorModelAndView.value( c, w);
+w = ~makeAlternativeView.value( m);
+~linkColorModelAndViewAlternative.value( c, w);
+)
+::
+
+subsection:: Button
+
+In the following I introduce a few examples for commonly used Views
+
+code::
+(
+m = Ref( 1);
+c = MethodController( m);
+b = Button();
+b.states = [[0], [1], [2], [3]];
+c.linkInput( b);
+b.front;
+c.value = 2;
+)
+::
+
+subsection:: CheckBox
+
+code::
+(
+m = Ref( false);
+c = MethodController( m);
+b = CheckBox();
+c.linkInput( b);
+b.front;
+)
+::
+
+subsection:: Knob, Slider, NumberBox, LevelIndicator
+
+code::
+(
+m = Ref( -6);
+c = MethodController( m, spec: \db);//the ref holds a Volume
+k = Knob();
+f = Slider();
+n = NumberBox();
+o = NumberBox();
+l = LevelIndicator().minWidth_( 20);// otherwise it would be invisible if the window isn't made bigger
+c.linkInput( k);
+c.linkInput( f);
+c.linkValue( n); // the first NumberBox represents the Volume in dB
+c.linkInput( o, spec:\amp);// the second NumberBox represents the Volume as an amplitude
+c.linkInputTo( l); // no need to listen to changes in this case
+View().layout_( HLayout( k, f, n, o, l)).front;
+)
+::
+
+subsection:: RangeSlider
+
+code::
+(
+m = [0.1, 0.2];
+c = MethodController.forArray( m, 0);
+d = MethodController.forArray( m, 1);
+f = RangeSlider().front;
+c.linkValue( f, \lo);
+d.linkValue( f, \hi);
+)
+::
+
+subsection:: Slider2D
+
+code::
+(
+m = [0.1, 0.2];
+c = MethodController.forArray( m, 0);
+d = MethodController.forArray( m, 1);
+f = Slider2D().front;
+c.linkValue( f, \x);
+d.linkValue( f, \y);
+)
+::
+
+subsection:: MultiSliderView
+
+Because MultiSliderView returns an Array we need an object that holds an Array.
+
+A List similar to a Ref holding an Array as a reference.
+
+code::
+(
+m = List.newUsing( { 1.0.rand }!50);
+c = MethodController( m, \array);
+f = MultiSliderView().front;
+c.linkValue( f);
+)
+::
+
+subsection:: EnvelopeView
+
+Unfortunately EnvelopeView is not really a view of an envelope but rather a View of a connected dots.
+
+code::
+(
+m = List[[0, 0.2, 0.4, 0.8, 1], [0, 1, 0.5, 0.5, 0]];
+v = EnvelopeView().front;
+c = MethodController( m, \array);
+c.linkValue( v);
+)
+::
+
+In this case the EnvelopeView is just only displays the Envelop. The Slider2D changes the Env.
+
+This is not the most reasonable example but it showed me that it must be possible to hook more than one controller to a View.
+
+code::
+(
+m = Env.perc;
+v = EnvelopeView();
+f = Slider2D();
+c = ObjectController( m);
+l = MethodController( m, { |m|m.levels[1] }, { |model, val, c|model.levels[1] = val }, msg:\level);
+t = MethodController( m, { |m|m.times[0] }, { |model, val, c|model.times[0] = val;model.times[1] = 1-val; }, msg:\time);
+c.linkValue( v, \setEnv);
+l.linkValue( f, \y);
+t.linkValue( f, \x);
+t.linkValue( f, \x, { |o, v, c|o.background = Color.red( v) });
+View().layout_( HLayout( f, v)).onClose_( { m.release }).front;
+)
+::
+
+subsection:: PopUpMenu
+
+The following is similar to the SV of the Conductor Quark.
+
+code::
+(
+var items = t = List[\aSymbol, "a String", Class, Object()];
+var index = i = Ref( 0);
+var itc = ObjectController( items);
+var inc = MethodController( index);
+var pc = ObjectController( index);
+v = PopUpMenu().front;
+i.value = 2;
+itc.linkValue( v, { |v, m|v.items = m.array.collect( _.asString) });
+inc.linkValue( v);
+pc.linkValueTo( { |m|m.debug( "this function linked to an ObjectController simply prints the model") }, \value);
+c = [itc, inc, pc];
+)
+
+
+t.add( 1);t.changed( \objectControllerSync);
+v.value;// unfortunately does PopUpMenu forget its index if the array is changed
+::
+
+subsection:: ListView
+
+code::
+(
+var items = List[\aSymbol, "a String", Class, Object()];
+var index = i = Ref( 0);
+var itc = ObjectController( items);
+var inc = MethodController( index);
+v = ListView().front;
+i.value = 2;
+itc.linkValue( v, { |v, m|v.items = m.array.collect( _.asString) });
+inc.linkValue( v);
+)
+::
+
+subsection:: StaticText, TextField
+
+The following is similar to the TV of the Conductor Quark.
+
+code::
+(
+m = Ref( "edit text in TextField and press enter");
+v = StaticText().minSize_( 400@50);
+t = TextField().minSize_( 400@50);
+c = MethodController( m);
+c.linkValueTo( v, \string_);
+c.linkValue( t, \string);
+View().layout_( VLayout( v, t)).onClose_( { m.release }).front;
+)
+::
+
+subsection:: link to Object
+
+It is possible to link objects that are not Views but in this case
+
+not a view
+
+code::
+(
+m = Ref( false);
+c = MethodController( m);
+b = Ref( true);// will be overwritten with false at init
+c.linkInput( b);
+b.value.debug( "b value after link");
+b.value = true;
+b.value.debug( "b value after set");
+m.value.debug( "m value before update");
+b.changed( \viewGotUpdated);
+m.value.debug( "m value before update");
+b.value.debug( "b value at end");
+)
+// because only Views have a onClose hook unlink needs to be called explictily.
+c.unlink(b);
+::
+
+subsection:: replaceModel
+
+code::
+(
+m = Ref( false);
+n = Ref( true);
+c = MethodController( m);
+b = CheckBox();
+c.linkInput( b);
+b.front;
+c.replaceModel( n);// checkbox is checked because n is true
+)
+::
+
+subsection:: link to Synth
+
+This is basically stolen from CV from the Conductor and/or CVCenter Quark ( including the documentation).
+
+Synths specify initial values of parameters as a flat link::Classes/Array:: of pairs consisting of a name and its initial value:
+
+code::
+[frequency: 440, amplitude: 1, ...]
+
+::
+
+"Extended argument arrays" allow MethodControllers to be used in place of the initial value. This is the standard syntax for establishing connections between MethodControllers and a server. In an extended argument array, the MethodController's value can be altered before being sent, multiple MethodController's can determine the value to be sent, and the value to be sent can be determined by a function ( here code::freq:: is just meant as an example key):
+
+table::
+## strong::value:: || [freq: 440]
+## strong::MethodController:: || [freq: aMethodController]
+## strong::altered MethodController:: || [freq: [aMethodController, aMethodController.midicps]]
+## strong::combination:: || [freq: [[aMethodController, bMethodController], aMethodController.midicps + bMethodController]]
+## strong::function:: || code::[freq: [aMethodController, { aMethodController.midicps.value + 33.rand }]]::
+::
+
+For example, the method link::Classes/Synth#*controls:: is identical to link::Classes/Synth#*new:: except the code::args:: parameter is extended:
+
+basic MethodController connection
+
+code::
+(
+m = Ref( 500);
+c = MethodController( m);
+Synth.linkedNew( "default", [
+	freq: c
+]);
+)
+::
+
+modified MethodController connection
+
+code::
+(
+m = Ref( 500);
+c = MethodController( m);
+n = Ref( -20);
+a = MethodController( n, spec:\db);
+
+	Synth.linkedNew( "default", [
+		amp: [a, a.dbamp],
+		freq: c
+	]);
+)
+::
+
+
+multiple modified connection
+
+code::
+(
+	Synth.linkedNew( "default", [
+		freq: [
+			[a, b], a + b
+		],
+		amp: [
+			[a, b], ( a.cpsmidi.neg/4 + b).dbamp
+		]
+	]);
+)
+::
+
+In the previous two examples, the modifying expression is actually a combination of link::Classes/Stream::s altered with link::Overviews/Operators#Binary Operators#binary:: and link::Overviews/Operators#Unary Operators#unary operators::. This is concise, but in some cases, it may be necessary to use a link::Classes/Function:: to define the modification.
+
+note::Within a function definition it is necessary to explicitly extract the value of the MethodController using a link::Classes/MethodController#-value#value:: message.::
+
+subsection:: Simple Synth
+
+A simple synth controlling GUI
+
+code::
+(
+s.waitForBoot{
+	SynthDef( \example, { |freq, amp, timbre|
+		var sig = SinOsc.ar( freq);
+		sig = ( sig*timbre).tanh*amp;
+		Out.ar( 0, sig!2);
+	 }
+	, [0.1, 0.1, 0.1] // use lag to smoth the GUI changes
+	, metadata:( specs: ( freq:\freq.asSpec, amp: \amp.asSpec, timbre: ControlSpec( 1, 100, \exp, 0, 10)))
+	).add;
+
+	s.sync;
+
+	~makeMVC = { |synthname|
+		// basic information
+		var specs = SynthDescLib.global[synthname].metadata.specs;
+
+		// make Model ( an event with values that can be changed)
+		var model = specs.collect{ |s, k|
+			Ref( s.default)
+		 };
+
+		// make controller
+		var ctrl = model.collect{ |m, k|
+			MethodController( m, spec: specs[k]);
+		 };
+
+		// make preset
+		var p = ctrl.asKeyValuePairs;// create a argument array with the controllers as values
+		var synth = Synth.linkedNew( \example, p); // instanciate a synth
+
+		// make views and window
+		var views = p.asEvent.collect{ Slider() }; // create slide
+		views[\window] = View().layout_( HLayout( *p.value.asEvent.collect{ |v, k|
+			VLayout(
+				StaticText().string_( k.asString),
+				views[k]
+			)
+		 }.values));
+
+		views.window.onClose = {
+			ctrl.do( _.remove);// if I don't remove the ctrl-ers they would be dependands of the Refs and because of this they would be a memory leak.
+			synth.free // stop the synth if the window closes
+		 };
+
+		views.window.front;
+
+		// link controller and view
+		ctrl.collect{ |c, k|
+			c.linkInput( views[k]);
+		 };
+
+		( ctrl: ctrl, views: views, model: model, synth: synth);
+	 };
+
+	c = ~makeMVC.value( \example);
+
+}
+)
+::
+
+subsection:: Synth with start button
+
+In this example a synth is started by a button and released. the button is representing if the synth is running or not.
+
+(
+
+s.waitForBoot{
+	// a Synth that has a gate
+	SynthDef(\example,{|freq,amp,timbre,gate=1|
+		var sig=SinOsc.ar(freq);
+		sig=(sig*timbre).tanh*EnvGen.ar(Env.adsr(0.1,0.2,0.5,1),gate,doneAction:2)*amp;
+		Out.ar(0,sig!2);
+	}
+	,[0.1,0.1,0.1]
+	,metadata:(specs: (freq:\freq.asSpec,amp: \amp.asSpec,timbre: ControlSpec(1,100,\exp,0,10)))
+	).add;
+
+	s.sync;
+
+	~makeMVC = {|synthname|
+		// basic information
+		var specs = SynthDescLib.global[synthname].metadata.specs;
+
+		// make Model (an event with values that can be changed)
+		var model = specs.collect{|s,k|
+			Ref(s.default)
+		};
+
+		// the model for the synth is simply the event but because there is no synth the variable stays nil
+
+		// model.asynth=nil;
+
+		// make controller
+		var ctrl = model.collect{|m,k|
+			MethodController(m,spec: specs[k]);
+		};
+
+		// a controller for the button that starts and stops the synth
+		var b=MethodController(model
+			,{|m|if(m.asynth.isNil){0}{1}} // modelget defines the state of the Button return 1 if there is a synth otherwise 0
+			,{|m,v,c|
+				// on button change start or stop the synth
+				if(v<1){
+					m.asynth.set(\gate,0);
+				}{
+					// only start the synth if it end allready
+					if(m.asynth.isNil){
+						var p = ctrl.asKeyValuePairs;// create a argument array with the controllers as values
+						m.asynth=Synth.linkedNew(\example,p);
+						OSCFunc({                 // a oscfunc that get called when the synth stops
+							m.asynth=nil;          // set synth to nil
+							{c.updateLinks}.defer; // make that the value of the model is updated
+						}, '/n_end', s.addr, nil, [m.asynth.nodeID]).oneShot;
+					}
+				};
+		},msg:\button);
+
+		// make Views and window
+		var views = ctrl.collect{Slider()}; // create slide
+		views[\button]=Button().states_([[0],[1]]);
+		views[\window] = View().layout_(HLayout(*ctrl.collect{|v,k|
+			VLayout(
+				StaticText().string_(k.asString),
+				views[k]
+			)
+		}.values++[views[\button]]));
+
+		views.window.onClose = {
+			model.asynth.set(\gate,0); // stop the synth if the window closes
+		};
+
+		// link controller and view
+		ctrl.collect{|c,k|
+			c.linkInput(views[k]);
+		};
+
+		b.linkInput(views[\button]);
+
+		views.window.front;
+
+		(ctrl: ctrl, views: views, model: model,button: b);
+
+	};
+
+	c = ~makeMVC.value(\example);
+
+}
+
+)
+
+subsection:: MIDI
+
+to link a midifunc to a controller is so simple that i don't know what to describe about it.
+
+code::
+(
+f = Ref( 500);
+a = Ref( 0.5);
+c = MethodController( m, spec: \freq);
+d = MethodController( m, spec: \amp);
+MIDIFunc.noteOn({|vel,num,chan,src|c.value=num.midicps;d.input=vel/127});
+)
+::
+
+MIDIIn.doNoteOnAction( 1, 1, 128.rand, 128.rand); // spoof
+
+subsection:: TODO and stuff
+
+// these are the dictionaries that are populated while links exist.
+
+Object.dependantsDictionary
+
+AbstractController.modelChangeActionDictionary.dictionary.keys
+
+AbstractController.objChangeActionDictionary.dictionary.keys
+
+more complex views:
+
+code::
+SoundFileView
+Menu
+ToolBar
+TreeView
+UserView,
+UserViewWithValue
+::
+
+TODO
+
+MIDI
+
+code::
+MIDIFunc.noteOn()
+::
+
+subsection:: Final stuff
+
+My implementation is shaped by my use of CV but because I aimed for a implementation that is clear to me I simplified code to use cases that I know this means especially that i didn't implemented links to Node, NodeProxy, and Bus. For the case you have use cases for that please feel free to contact me.

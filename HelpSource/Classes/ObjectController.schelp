@@ -1,0 +1,148 @@
+TITLE:: ObjectController
+summary:: A Controller that links an object to another Object like a View or Synth
+categories:: MethodControllerQuark
+related:: Classes/MethodController
+
+DESCRIPTION::
+
+The ObjectController is a controller that forwards the model to its Views.
+
+This is especially helpful if a View represents a object. while other Views modify it, using MethodController.
+
+If a MethodController is used to change the model it calls MethodController:updateViews, as long as updateObjectOnChange is true (default) the ObjectControllers associated with the model are updated as well. By this the View that represents the Object is kept in sync.
+
+CLASSMETHODS::
+
+METHOD:: new
+
+Create a ObjectController
+
+ARGUMENT:: model
+
+The Object that holds the data
+
+ARGUMENT:: spec
+
+A link::Classes/ControlSpec:: that specifies the data of the Model. The spec is used to unmap the data to the 0 to 1 range used by many Views. The default value is a link::Classes/NonSpec:: a spec that does not specify anything.
+
+ARGUMENT:: msg
+
+msg is by default \objectControllerSync .
+
+returns:: a ObjectController
+
+
+
+INSTANCEMETHODS::
+
+METHOD:: input
+
+getter gets the unmaped data from the model ( making use of the spec of the ObjectController )
+
+setter maps and sets the data in the model ( making use of the spec of the ObjectController )
+
+ARGUMENT:: val
+
+If a ControlSpec is specified it would usually be a number in the range 0 to 1
+
+returns:: If a ControlSpec is specified the getter usually returns a number in the range 0 to 1
+
+METHOD:: value
+
+getter gets the data from the model.
+
+setter sets the data in the model.
+
+ARGUMENT:: val
+
+returns:: the data from the model.
+
+METHOD:: next
+
+calls link::Classes/MethodController#-value:: for compatibility with Streams
+
+METHOD:: link
+
+shortcut for linkInput
+
+METHOD:: linkInput
+
+Links to a object ( often a View ) so that the object is updated on a models change.
+
+Linking means here a one directional connection.
+
+The object/view gets the model as unmaped by the provided spec.
+
+ARGUMENT:: obj
+
+Object to be linked. Often a View.
+
+ARGUMENT:: objset
+
+Method used to set data in the View.
+
+Default is \value_.
+
+Either Symbol, Array, or Function ( see link::Classes/MethodController#*new:: modelget )
+
+ARGUMENT:: spec
+
+A ControlSpec that can be used to map the values returned by link::Classes/MethodController#-input:: to the range of the View()
+
+METHOD:: linkValue
+
+links a model to a object ( often a View ) so that the object is updated on a models change.
+
+linking means here a one directional connection.
+
+ARGUMENT:: obj
+
+Object to be linked. Often a View.
+
+ARGUMENT:: objset
+
+Method used to set data in the View.
+
+Default is \value_.
+
+Either Symbol, Array, or Function ( see link::Classes/MethodController#*new:: modelget )
+
+ARGUMENT:: spec
+
+A ControlSpec that can be used to map the values returned by link::Classes/MethodController#-value:: to the range of the View()
+
+METHOD:: update
+
+update is called by model.changed( msg ).
+
+METHOD:: updateLinks
+
+if the model might have changed but one is not sure one can use this method to update the linked Views.
+
+
+METHOD:: unlink
+
+releases or unlinks the obj.
+
+unlink is assiged to be called by View:onClose automatically if View:onClose is not overwritten by another function. If the Object is not a View it has to be called explicitly to avoid memory leaks.
+
+ARGUMENT:: obj
+object to be released
+
+METHOD:: remove
+
+Remove this ObjectController from its models dependancy.
+
+If all links are released it is called automatically, because calling MethodController:update would be of no use.
+
+METHOD:: replaceModel
+
+replaces the model
+
+ARGUMENT:: newModel
+
+Model to replace the old model.
+
+EXAMPLES::
+
+Search for ObjectController in the examples in the link::Classes/MethodController:: documentation.

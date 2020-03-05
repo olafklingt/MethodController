@@ -1,0 +1,47 @@
+TITLE:: FuncSpec
+summary:: a Spec that can be anything
+categories:: MethodControllerQuark
+
+DESCRIPTION::
+A Spec is basically an Object that translates data ( map/unmap), secures that the data fits a specification (constrain).
+This Spec holds functions to enact these duties.
+
+CLASSMETHODS::
+
+METHOD:: new
+Creates a FuncSpec
+
+ARGUMENT:: mapFunc
+a Function to be called on map
+
+ARGUMENT:: unmapFunc
+a Function to be called on unmap
+
+ARGUMENT:: constrainFunc
+a Function to be called on constrain
+
+ARGUMENT:: defaultFunc
+a Function to be called on default
+
+returns:: a FuncSpec
+
+INSTANCEMETHODS::
+
+The instance methods are the most important of ControlSpec
+
+EXAMPLES::
+
+A simple example that could be also with a ControlSpec
+code::
+(
+a = FuncSpec({|a|(a*10).debug("map 0-1 to 0-10")}
+		,{|a|(a/10).debug("unmap 0-10 to 0-1")}
+		,{|a|a.clip(0,10).debug("constrain between 0-10")}
+		,0
+);
+a.map(0.5);
+a.unmap(5);
+a.constrain(-1000);
+a.default;
+)
+::

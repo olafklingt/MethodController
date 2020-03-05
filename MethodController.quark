@@ -1,0 +1,12 @@
+(
+// required:
+    \name:           "MethodController",
+    \path:           "MethodController",
+    \summary:        "A MethodController is a class that links a model to multiple Views or Synths and keeps them updated.",
+    \author:         "Olaf Hochherz",
+    \since:          "2020",
+    \schelp:         "MethodController",
+    \ext_dependancy: "",
+    \url:            "https://github.com/olafklingt/MethodController",
+
+)

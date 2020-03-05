@@ -1,0 +1,37 @@
+TITLE:: NonSpec
+summary:: a Spec that specifies nothing
+categories:: MethodControllerQuark
+
+DESCRIPTION::
+
+Equivalent to NoSpec from the Conductor/CVCenter Quarks.
+
+A spec that specifies nothing.
+
+This is helpful for the MethodController if one doesn't want to specify a spec of the linked data.
+
+
+CLASSMETHODS::
+
+It is used as Class not as Object.
+
+METHOD:: asSpec
+returns itself
+
+returns:: NonSpec
+
+METHOD:: map
+returns the argument
+
+METHOD:: unmap
+returns the argument
+
+METHOD:: constrain
+returns the argument
+
+METHOD:: default
+
+returns:: 0
+
+
+INSTANCEMETHODS::
