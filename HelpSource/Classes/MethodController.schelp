@@ -127,14 +127,7 @@ c.linkInput( w);
 )
 ::
 
-The MethodController is adding itself as a dependant of the Model only if it is linked to other Objects.
-
-TODO THIS IS NOT UPTODATE!
-The Views are added to a Dictionary in the Controller in the variable links.
-
-To avoid memory leaks it has to remove itself or be released.
-
-Views usually remove themselves from the Dictionary onClose. ( This behaviour would break if someone make use of the onClose variable and overwrites the function that got put there)
+The MethodController becomes a dependant of the Model and the linked Objects, if a link is set up. When a link is released (unlink) these dependancies are removed. Views usually remove themselves from the Dictionary onClose. (This behaviour would break if someone make use of the onClose variable and overwrites the function that got put there) To avoid memory leaks links have to be unlinked.
 
 code::
 (
