@@ -6,4 +6,4 @@ The class is a generalization of the CV class from the Conducto and CVCenter Qua
 
 The MethodController (and ObjectController) class provides a flexible interface that helps to link values in datastrutures to views, and keep them updated.
 
-Some code is directly taken from the CV class but sometimes simplified. Because I don't use Groups and NodeProxies myself I didn't implemented support for it. 
+Some code is directly taken from the CV class but sometimes simplified. Because I don't use Groups and NodeProxies myself I didn't implemented support for it. But please send me example usecases for which such implementation would be helpful.
