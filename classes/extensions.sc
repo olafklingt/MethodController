@@ -53,13 +53,18 @@
 		};
 
 		if (controllerLinks.size > 0) {
-			OSCFunc({controllerLinks.do({ arg c; c.releaseAt(node)})},'/n_end', node.server.addr, nil,[node.nodeID]).oneShot;
+			OSCFunc({controllerLinks.do({ arg c; c.unlink(node)})},'/n_end', node.server.addr, nil,[node.nodeID]).oneShot;
 		};
 	}
 
-	*linkedNew{|defName, args, target, addAction=\addToHead|
+	*linkedNew{|defName, args, target, addAction=\addToHead,pause=false|
 		var argArr=this.prArgsAsArgArray(args);
-		var synth=Synth(defName, argArr, target, addAction);
+		var synth;
+		if(pause){
+			synth=Synth.newPaused(defName, argArr, target, addAction);
+		}{
+			synth=Synth(defName, argArr, target, addAction);
+		};
 		this.prLinkControllersToNode(args,synth);
 		^synth;
 	}
@@ -78,6 +83,22 @@
 	}
 }
 
++ Object {
+	getMethodControllers{
+		^dependantsDictionary[this]
+		.select{|a|a.class==MethodController}
+		.asArray
+		.collect{|a|(a.msg->a)}
+		.asEvent
+	}
+	getObjectControllers{
+		^dependantsDictionary[this]
+		.select{|a|a.class==ObjectController}
+		.asArray
+		.collect{|a|(a.msg->a)}
+		.asEvent
+	}
+}
 // + Object {
 // 	makeMethodController{|spec=(NonSpec)|
 // 		^MethodController(this,spec: spec);

@@ -1,13 +1,7 @@
 SuperClassOfObjectAndMethodController : Stream{
-	classvar <modelChangeActionDictionary;
-	classvar <objChangeActionDictionary;
 	var <model, <msg, <modelSpec;
-
-	*initClass {
-		modelChangeActionDictionary = MultiLevelIdentityDictionary( );
-		objChangeActionDictionary = MultiLevelIdentityDictionary( );
-	}
-
+	var <modelChangedActionDictionary;
+	var <objChangedActionDictionary;
 	replaceModel{ | newModel |
 		this.remove;
 		model = newModel;
@@ -15,33 +9,52 @@ SuperClassOfObjectAndMethodController : Stream{
 		this.updateLinks;
 	}
 
-
 	update { arg theChanger, what;
 		if( theChanger === model ){
 			if( what === msg ){
-				modelChangeActionDictionary[this].do{ | a | a.value( theChanger ) };
+				modelChangedActionDictionary.do{ | a | a.value( theChanger ) };
 			}
 		}{
-			objChangeActionDictionary[theChanger, this].value( theChanger );
+			objChangedActionDictionary[theChanger].value( theChanger );
 		}
 	}
 
 	prLinkTo{ | obj, linkfunc |
-		if( modelChangeActionDictionary[this, obj].isNil ){
-			modelChangeActionDictionary[this, obj] = FunctionList( )
+		if( modelChangedActionDictionary[obj].isNil ){
+			modelChangedActionDictionary[obj] = FunctionList( )
 		};
 
-		modelChangeActionDictionary[this, obj].addFunc( linkfunc );
+		modelChangedActionDictionary[obj].addFunc( linkfunc );
 
 		model.addDependant( this );
 
-		if( obj.respondsTo( \onClose_ ) ){ // if obj is a View remove on close
+
+		// to make it compatible with SCViewHolder i use try
+
+		// [obj,obj.class,oPbj.respondsTo( \onClose_ ) ].debug(\oroc_);
+		// if( obj.respondsTo( \onClose_ ) ){ // if obj is a View remove on close
+		// 	if( obj.onClose.isNil ){
+		// 		obj.onClose = FunctionList( );
+		// 	};
+		// 	obj.onClose.addFunc{ this.unlink( obj.debug(\unlinkthis) ) };
+		// }{
+		(try{
 			if( obj.onClose.isNil ){
 				obj.onClose = FunctionList( );
+			}{
+				if(obj.onClose.class==Function){
+					var fl=FunctionList( );
+					obj.onClose = FunctionList( );
+					obj.onClose.addFunc(fl);
+				}
 			};
 			obj.onClose.addFunc{ this.unlink( obj ) };
+			false;// no error
+		}?true).if{
+			if(obj.class.asString.contains("View")){
+			("View Class is not well implemented it should implement onClose"++obj.asCompileString).warn;
+			}
 		};
-
 		this.updateLinks;
 	}
 
@@ -76,10 +89,10 @@ SuperClassOfObjectAndMethodController : Stream{
 	}
 
 	unlink{ | obj |
-		objChangeActionDictionary.removeEmptyAt( obj, this );
+		objChangedActionDictionary.removeAt( obj );
 		obj.removeDependant( this );
-		modelChangeActionDictionary.removeEmptyAt( this, obj );
-		if( modelChangeActionDictionary[this].size === 0 ){
+		modelChangedActionDictionary.removeAt( obj );
+		if( modelChangedActionDictionary.size === 0 ){
 			this.remove;
 		}
 	}
@@ -114,25 +127,39 @@ MethodController : SuperClassOfObjectAndMethodController{
 		^super.newCopyArgs( model
 			, msg
 			, spec.asSpec
+			, IdentityDictionary( )
+			, IdentityDictionary( )
 			, modelget
 			, modelset
-			, updateObjectOnChange );
+			, updateObjectOnChange
+		);
 	}
 
 	prLinkFrom{ | obj, linkfunc |
-		if( objChangeActionDictionary[obj, this].isNil ){
-			objChangeActionDictionary[obj, this] = FunctionList( )
+		if( objChangedActionDictionary[obj].isNil ){
+			objChangedActionDictionary[obj] = FunctionList( )
 		};
-		objChangeActionDictionary[obj, this].addFunc( linkfunc );
+		objChangedActionDictionary[obj].addFunc( linkfunc );
 		obj.addDependant( this );
 
-		if( obj.respondsTo( \action ).not ) { // if obj doesn't have a action hook ( is not a View )
-			"linked Object should have a action hook otherwise it only get called if obj.changed( \\viewGotUpdated ); is called".warn;
-		}{
+		// if( obj.respondsTo( \action ).not ) { // if obj doesn't have a action hook ( is not a View )
+		// 	"linked Object should have a action hook otherwise it only get called if obj.changed( \\viewGotUpdated ); is called".warn;
+		// }{
+		// 	obj.action = { | obj |
+		// 		// [this,obj,\viewGotUpdated].debug;
+		// 		obj.changed( \viewGotUpdated );
+		// 	}
+		// }
+
+		// also to make SCViewHolder more compatible
+		(try{
 			obj.action = { | obj |
 				obj.changed( \viewGotUpdated );
-			}
-		}
+			};
+			false;// no error
+		}?true).if{
+			("linked Object should have a action hook otherwise it only get called if obj.changed( \\viewGotUpdated ); is called:"++obj.asCompileString).warn;
+		};
 	}
 
 	linkInputFrom{ | obj, objget = \value, spec = ( NonSpec ) |
@@ -210,7 +237,12 @@ MethodController : SuperClassOfObjectAndMethodController{
 ObjectController : SuperClassOfObjectAndMethodController{
 	*new{ | model, spec = ( NonSpec ), msg |
 		msg = msg?\objectControllerSync;
-		^super.newCopyArgs( model, msg, spec.asSpec, IdentityDictionary.new );
+		^super.newCopyArgs(model
+			, msg
+			, spec.asSpec
+			, IdentityDictionary( )
+			, IdentityDictionary( )
+		)
 	}
 
 	value{

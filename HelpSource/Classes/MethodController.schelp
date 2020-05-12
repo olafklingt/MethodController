@@ -129,9 +129,6 @@ c.linkInput( w);
 
 The MethodController is adding itself as a dependant of the Model only if it is linked to other Objects.
 
-TODO THIS IS NOT UPTODATE!
-The Views are added to a Dictionary in the Controller in the variable links.
-
 To avoid memory leaks it has to remove itself or be released.
 
 Views usually remove themselves from the Dictionary onClose. ( This behaviour would break if someone make use of the onClose variable and overwrites the function that got put there)
@@ -149,7 +146,6 @@ c.linkInput( w);
 )
 m.release // the model releases its dependants
 c.remove // or the controller removes itself from its model
-c.links // Dictionary that holds the links to the view
 c.unlink( v) // this only needs to be called if the onClose hook can not be used, or the linked object doesn't have a onClose hook.
 ::
 
@@ -919,6 +915,7 @@ subsection:: Synth with start button
 
 In this example a synth is started by a button and released. the button is representing if the synth is running or not.
 
+code::
 (
 
 s.waitForBoot{
@@ -1004,6 +1001,7 @@ s.waitForBoot{
 }
 
 )
+::
 
 subsection:: MIDI
 
@@ -1023,14 +1021,6 @@ MIDIIn.doNoteOnAction( 1, 1, 128.rand, 128.rand); // spoof
 
 subsection:: TODO and stuff
 
-// these are the dictionaries that are populated while links exist.
-
-Object.dependantsDictionary
-
-AbstractController.modelChangeActionDictionary.dictionary.keys
-
-AbstractController.objChangeActionDictionary.dictionary.keys
-
 more complex views:
 
 code::
@@ -1040,14 +1030,6 @@ ToolBar
 TreeView
 UserView,
 UserViewWithValue
-::
-
-TODO
-
-MIDI
-
-code::
-MIDIFunc.noteOn()
 ::
 
 subsection:: Final stuff
