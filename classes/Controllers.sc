@@ -12,7 +12,13 @@ SuperClassOfObjectAndMethodController : Stream{
 	update { arg theChanger, what;
 		if( theChanger === model ){
 			if( what === msg ){
-				modelChangedActionDictionary.do{ | a | a.value( theChanger ) };
+				modelChangedActionDictionary.keysValuesDo{ | k,a|
+					if(k.isView){
+						{a.value( theChanger) }.defer;
+					}{
+						a.value( theChanger )
+					}
+				}
 			}
 		}{
 			objChangedActionDictionary[theChanger].value( theChanger );
@@ -52,7 +58,7 @@ SuperClassOfObjectAndMethodController : Stream{
 			false;// no error
 		}?true).if{
 			if(obj.class.asString.contains("View")){
-			("View Class is not well implemented it should implement onClose"++obj.asCompileString).warn;
+				("View Class is not well implemented it should implement onClose"++obj.asCompileString).warn;
 			}
 		};
 		this.updateLinks;
@@ -110,12 +116,12 @@ MethodController : SuperClassOfObjectAndMethodController{
 		modelget = modelget?\value;
 		modelset = modelset??{ ( modelget ).asSetter };
 		if( msg.isSymbol.not ){
-			if( modelget.isSymbol ){
-				msg = msg?modelget;
+			if( modelset.isSymbol ){
+				msg = msg?modelset;
 			}{
-				if( modelget.isArray ){
+				if( modelset.isArray ){
 					var m = "";
-					modelget.do{ | e |
+					modelset.do{ | e |
 						m = m++"_"++e;
 					};
 					msg = msg?m.asSymbol;
@@ -231,6 +237,17 @@ MethodController : SuperClassOfObjectAndMethodController{
 			.collect{ | oc | oc.msg }
 			.do{ | m | model.changed( m ) };
 		}
+	}
+}
+
+MethodControllerAction : MethodController{
+	var <>action;
+	doAction {
+		action.value(this);
+	}
+	valueAction_{ | val |
+		this.value=val;
+		action.value(this);
 	}
 }
 

@@ -65,6 +65,7 @@
 		}{
 			synth=Synth(defName, argArr, target, addAction);
 		};
+		// synth.debug(\synth);
 		this.prLinkControllersToNode(args,synth);
 		^synth;
 	}
